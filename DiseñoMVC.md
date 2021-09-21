@@ -36,4 +36,29 @@ Para configurar default.html en la solicitud raíz http://localhost:<port>, llam
 *UseDefaultFiles* configura el middleware DefaultFiles, que es una parte de middleware StaticFiles. Esto establece automáticamente un archivo html llamado default.html, default.htm, index.html o index.htm en la
 solicitud http.
 
+*El orden del middleware es muy importante. app.UseDefaultFiles() debe agregarse antes app.UseStaticFiles() en el pipeline de solicitudes.*
+  
+### FileServer
+
+Combina las funcionalidades del middleware UseDefaultFiles y UseStaticFiles. 
+Entonces, en lugar de usar ambos middlware, simplemente use UseFileServer en el método Configure.
+
+## Y si los quiero desde una carpeta diferente?
+  
+Especificamos la ruta en el middleware, dentro del Startup. Suponiendo que queremos acceder a los archivos estáticos desde la carpeta Admin deltro del proyecto.
+  
+  ```
+  public void Configure (IApplicationBuilder app){
+  
+    app.UseStaticFiles();
+    app.UseStaticFiles(new StatisFileOptions()
+    {
+      FileProvider = new PhysicalFileProvider(Path.Combine
+          (Directory.GetCurrentDirectory(), "Content")),
+        RequestPath = new PathString("/Admin")
+    } );
+  
+  }
+  
+  ```
 
