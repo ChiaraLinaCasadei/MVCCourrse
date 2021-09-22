@@ -20,5 +20,5 @@ Mediante el uso de middleware, puede inspeccionar la solicicitud y tomar decisio
 El flujo de middlewares y su ordeb determinan cómo se ejecuta la apllicación.
 Podemos establecer el orden de ejecución del middleware en el pipeline.
 
-![alt text](https://github.com/[ChiaraLinaCasadei/[MVCCourse]/blob/[main]/middlewarePipeline.png?raw=true)
+![alt text](middlewarePipeline.png)
 
