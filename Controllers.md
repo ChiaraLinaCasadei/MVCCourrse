@@ -191,3 +191,184 @@ Message is: @ViewData[“Message”]
 </p>
 ```
 
+# Filtros de Acción
+
+Son atributos declarativos que se agregan a los métodos de acción.
+Los filtros son clases de MVC que se pueden utilizar para gestionar diferentes intereses en su aplicación web, como la autorización a los recursos del sistema. Usted puede aplicar un filtro de acción en un controlador anotando el atributo apropiado en el método de acción. También puede aplicar un filtro a cada acción anotando el atributo en la clase del controlador.
+
+## Tipos de filtros
+
+* Filtros de autorización
+ 
+Los filtros de autorización se ejecutan antes que cualquier otro filtro y antes del código en el método de acción. Se utilizan para comprobar los derechos de acceso de un usuario a la acción.
+* Filtros de recursos
+Aparecen en la canalización de filtros después de los filtros de autorización y antes cualquier otro filtro. Se pueden utilizar por motivos de rendimiento.
+Los filtros de recursos implementan Interfaz IResouceFilter o IAsyncResourceFilter.
+* Filtros de acción
+
+Los filtros de acción se ejecutan antes y después del código en el método de acción. Puedes usar la acción filtros para manipular los parámetros que recibe una acción. También se pueden utilizar para manipular resultado devuelto por una acción. Los filtros de acción implementan la interfaz IActionFilter o la Interfaz IAsyncActionFilter.
+* Filtros de excepción
+
+Los filtros de excepción se ejecutan solo si un método de acción u otro filtro arroja una excepción. Estas clases de filtro se utilizan para manejar errores.
+Los filtros de excepción implementan la interfaz IExceptionFilter o la interfaz IAsyncExceptionFilter.
+* Filtros de resultados
+
+Los filtros de resultados se ejecutan antes y después de ejecutar el resultado de una acción.
+Los filtros de resultados implementan la interfaz IResultFilter o la interfaz IAsyncResultFilter
+
+---
+
+Puede crear sus propias clases de filtros o utilizar clases de filtros existentes. Los siguientes son ejemplos de clases de filtro que puede utilizar:
+
+### La clase de filtro ResponseCacheAttribute 
+Anotar una acción con el atributo ResponseCache almacenará en caché la respuesta al cliente. El atributo ResponseCache contiene varias propiedades. Uno de ellos es la propiedad Duration, que obtiene o establece la duración, en segundos, para la cual la respuesta se almacena en caché.
+### La clase de filtro AllowAnonymousAttribute 
+Anotar una acción con el atributo AllowAnonymous permitirá a los usuarios acceder a una acción sin iniciar sesión.
+### La clase de filtro ValidateAntiForgeryTokenAttribute
+Anotar una acción con el atributo ValidateAntiForgeryToken ayudará a prevenir ataques de falsificación de solicitudes entre sitios.
+
+---
+Puede crear un filtro de acción personalizado o un filtro de resultados personalizado. Puede crear filtros personalizados mediante la implementación de la interfaz IActionFilter o la interfaz IResultFilter.
+Sin embargo, la clase base ActionFilterAttribute implementa interfaces IActionFilter como el IResultFilter. Al derivar su filtro de la clase base ActionFilterAttribute, puede crear una filtro
+único que puede ejecutar código tanto antes como después de ejecutar una acción, y tanto antes como después de que se devuelve el resultado
+
+```
+ public class SimpleActionFilter : ActionFilterAttribute
+{
+     public override void
+    OnActionExecuting(ActionExecutingContext filterContext)
+     {
+         Debug.WriteLine("This Event Fired: OnActionExecuting");
+     }
+     public override void
+    OnActionExecuted(ActionExecutedContext filterContext)
+     {
+         Debug.WriteLine("This Event Fired: OnActionExecuted");
+     }
+     public override void
+    OnResultExecuting(ResultExecutingContext filterContext)
+     {
+         Debug.WriteLine("This Event Fired: OnResultExecuting");
+     }
+     public override void
+    OnResultExecuted(ResultExecutedContext filterContext)
+     { 
+         Debug.WriteLine("This Event Fired:
+        OnResultExecuted");
+    }
+}
+```
+Utilizando el filtro que creamos
+
+```
+public class MyController : Controller
+{
+     [SimpleActionFilter]
+     public IActionResult Index()
+     {
+        return Content("some text");
+     }
+}
+
+```
+
+El código muestra cómo se puede recuperar el nombre de la acción en OnActionExecuting y en OnActionExecuted:
+
+```
+public class SimpleActionFilter : ActionFilterAttribute
+{
+     public override void OnActionExecuting(ActionExecutingContext filterContext)
+     {
+         string actionName = filterContext.ActionDescriptor.RouteValues["action"];
+         Debug.WriteLine(actionName + " started");
+     }
+     public override void OnActionExecuted(ActionExecutedContext filterContext)
+     {
+         string actionName = filterContext.ActionDescriptor.RouteValues["action"];
+         Debug.WriteLine(actionName + " finished");
+     }
+}
+
+```
+El siguiente código muestra cómo el contenido devuelto al navegador se puede recuperar en el controlador de eventos OnResultExecuted
+
+```
+public class SimpleActionFilter : ActionFilterAttribute
+{
+ public override void OnResultExecuted(ResultExecutedContext filterContext)
+ {
+     ContentResult result = (ContentResult)filterContext.Result;
+     Debug.WriteLine("Result: " + result.Content);
+ }
+}
+
+```
+
+El siguiente código muestra cómo puede cambiar el contenido de la clase SimpleActionFilter para que escriba la salida en un archivo de registro que se encuentra en **c:\logs\log.txt**
+
+```
+
+public class SimpleActionFilter : ActionFilterAttribute
+{
+     public override void OnActionExecuting(ActionExecutingContext filterContext)
+     {
+         string actionName = filterContext.ActionDescriptor.RouteValues["action"];
+         using (FileStream fs = new FileStream("c:\\logs\\log.txt", FileMode.Create))
+         {
+             using (StreamWriter sw = new StreamWriter(fs))
+             {
+                 sw.WriteLine(actionName + " started");
+             }
+         }
+     }
+
+     public override void OnActionExecuted(ActionExecutedContext filterContext)
+     {
+         string actionName = filterContext.ActionDescriptor.RouteValues["action"];
+         using (FileStream fs = new FileStream("c:\\logs\\log.txt", FileMode.Append))
+         {
+             using (StreamWriter sw = new StreamWriter(fs))
+             {
+                 sw.WriteLine(actionName + " finished");
+             }
+         }
+      }
+
+     public override void OnResultExecuting(ResultExecutingContext filterContext)
+     {
+         using (FileStream fs = new FileStream("c:\\logs\\log.txt", FileMode.Append))
+         {
+             using (StreamWriter sw = new StreamWriter(fs))
+             {
+                 sw.WriteLine("OnResultExecuting");
+             }
+         }
+     }
+
+     public override void OnResultExecuted(ResultExecutedContext filterContext)
+     {
+         ContentResult result = (ContentResult)filterContext.Result;
+         using (FileStream fs = new FileStream("c:\\logs\\log.txt", FileMode.Append))
+         {
+             using (StreamWriter sw = new StreamWriter(fs))
+             {
+                 sw.WriteLine("Result: " + result.Content);
+             }
+         }
+     }
+}
+ 
+
+```
+Cuando se realice la navega en la acción Index en el controlador MyController, se creara un archivo
+llamado log.txt
+
+````
+Index started
+
+Index finished
+
+OnResultExecuting
+
+Result: some text
+```
